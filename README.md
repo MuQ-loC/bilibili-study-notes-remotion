@@ -32,6 +32,8 @@ npm run video:tts -- --reference public/audio/voice-samples/custom/my-voice/refe
 public/audio/xiaohongshu-narration.wav
 ```
 
+仓库里自带了一个同名静音占位文件，目的是让 Remotion Studio 第一次打开时不因为音频 404 报错。你生成真实配音后直接覆盖这个文件即可。
+
 生成字幕时间轴：
 
 ```bash

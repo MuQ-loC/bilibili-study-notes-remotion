@@ -42,7 +42,7 @@ const commands = [
 
 const assets = [
   ['口播稿', 'public/audio/xiaohongshu-narration.txt', '已纳入仓库'],
-  ['配音音频', 'public/audio/xiaohongshu-narration.wav', '用户本地生成，不提交'],
+  ['配音音频', 'public/audio/xiaohongshu-narration.wav', '仓库内置静音占位；生成配音后覆盖'],
   ['字幕轴', 'public/audio/xiaohongshu-captions.json', '可重新生成'],
   ['成片', 'out/xiaohongshu-tutorial.mp4', '渲染后生成']
 ];
