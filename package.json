@@ -4,6 +4,8 @@
   "private": false,
   "type": "module",
   "scripts": {
+    "web:dev": "vite frontend --host 127.0.0.1 --port 8794",
+    "web:build": "tsc -p frontend/tsconfig.json && vite build frontend",
     "video:script": "tsx scripts/extract-voiceover-script.ts",
     "voice:import": "tsx scripts/import-reference-voice.ts",
     "video:tts": "tsx scripts/generate-voiceover.ts",
@@ -14,13 +16,19 @@
     "video:render": "remotion render remotion/index.ts XiaohongshuTutorial out/xiaohongshu-tutorial.mp4 --codec=h264 --public-dir=public"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.2.5",
     "@remotion/cli": "4.0.474",
+    "@vitejs/plugin-react": "^5.1.1",
+    "antd": "^6.4.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "remotion": "4.0.474"
+    "remotion": "4.0.474",
+    "vite": "^7.2.7"
   },
   "devDependencies": {
     "@types/node": "^24.10.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
