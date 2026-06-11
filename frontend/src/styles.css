@@ -66,6 +66,46 @@ body {
   gap: 16px;
 }
 
+.aiPanel {
+  margin-top: 16px;
+}
+
+.aiGrid {
+  display: grid;
+  grid-template-columns: minmax(480px, 0.95fr) minmax(520px, 1.05fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.modelInput {
+  max-width: 280px;
+}
+
+.durationInput {
+  width: 160px;
+}
+
+.renderSwitch {
+  min-height: 32px;
+}
+
+.promptBox {
+  min-height: 160px !important;
+  line-height: 1.7;
+}
+
+.resultCard {
+  min-height: 420px;
+}
+
+.codePreview {
+  display: block;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .panel {
   min-height: 460px;
 }
@@ -112,7 +152,8 @@ body {
     gap: 12px;
   }
 
-  .grid {
+  .grid,
+  .aiGrid {
     grid-template-columns: 1fr;
   }
 }

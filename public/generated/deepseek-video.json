@@ -1,0 +1,22 @@
+{
+  "title": "AI 生成视频",
+  "subtitle": "在控制台输入提示词后，这里会被 DeepSeek 生成的分镜覆盖。",
+  "scenes": [
+    {
+      "title": "等待生成",
+      "subtitle": "输入主题、受众、风格和时长，一键生成横版视频。",
+      "narration": "这里是 DeepSeek 生成视频的预览占位。",
+      "bullets": ["填写 DeepSeek Key", "输入视频提示词", "点击生成并渲染"],
+      "accent": "#2563eb",
+      "duration": 6
+    },
+    {
+      "title": "安全渲染",
+      "subtitle": "模型负责生成结构和代码文本，Remotion 使用固定组件渲染。",
+      "narration": "这样可以保留 AI 创作能力，同时避免直接执行模型返回的任意代码。",
+      "bullets": ["JSON 分镜", "代码文本落盘", "固定组件渲染"],
+      "accent": "#0f766e",
+      "duration": 6
+    }
+  ]
+}

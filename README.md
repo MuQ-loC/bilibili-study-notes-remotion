@@ -43,13 +43,35 @@ npm run video:captions
 预览：
 
 ```bash
+npm run ai:api
+npm run web:dev
 npm run video:preview
+```
+
+打开控制台：
+
+```text
+http://127.0.0.1:8794
+```
+
+控制台里可以输入 DeepSeek Key 和视频提示词，一键生成 `DeepSeekGenerated` 视频规格。生成结果会写入：
+
+```text
+public/generated/deepseek-video.json
+public/generated/deepseek-video-code.tsx.txt
+```
+
+如果勾选“生成后直接渲染 MP4”，会输出：
+
+```text
+out/deepseek-generated.mp4
 ```
 
 渲染：
 
 ```bash
 npm run video:render
+npm run video:render:ai
 ```
 
 默认输出：

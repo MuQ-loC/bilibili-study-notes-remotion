@@ -1,11 +1,13 @@
 import { CopyOutlined, CustomerServiceOutlined, FileTextOutlined, PlayCircleOutlined, VideoCameraOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, ConfigProvider, Descriptions, Flex, Layout, List, Space, Steps, Tag, Timeline, Typography, message } from 'antd';
+import { Alert, Button, Card, ConfigProvider, Descriptions, Flex, Input, InputNumber, Layout, List, Space, Steps, Switch, Tag, Timeline, Typography, message } from 'antd';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import 'antd/dist/reset.css';
 import './styles.css';
 
 const { Header, Content } = Layout;
 const { Text, Title, Paragraph } = Typography;
+const { TextArea } = Input;
 
 const commands = [
   {
@@ -51,7 +53,67 @@ function copyCommand(command: string) {
   navigator.clipboard.writeText(command).then(() => message.success('命令已复制'));
 }
 
+type GeneratedVideoResponse = {
+  ok: boolean;
+  spec: {
+    title: string;
+    subtitle: string;
+    scenes: Array<{ title: string; subtitle: string; narration: string; duration: number }>;
+  };
+  code: string;
+  output_path?: string;
+  render_log?: string;
+  error?: string;
+};
+
 function App() {
+  const [apiKey, setApiKey] = useState(sessionStorage.getItem('deepseek_api_key') || '');
+  const [model, setModel] = useState('deepseek-chat');
+  const [duration, setDuration] = useState(45);
+  const [renderNow, setRenderNow] = useState(false);
+  const [prompt, setPrompt] = useState('做一个 45 秒横版视频，介绍我做的 B站视频总结工具。开头必须说“我做了一个开源小工具”，重点讲它能解析 B站链接、获取字幕、用 AI 校正错词、生成学习笔记、批量同步飞书。风格要像小红书教程，画面文字大，节奏快。');
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState<GeneratedVideoResponse | null>(null);
+  const [generateStatus, setGenerateStatus] = useState('DeepSeek 生成的视频会保存到 public/generated，并在 Remotion Studio 的 DeepSeekGenerated Composition 中预览。');
+
+  async function generateVideo() {
+    if (!apiKey.trim()) {
+      setGenerateStatus('请先输入 DeepSeek Key。Key 只发给本机 8795 服务，不写入仓库。');
+      return;
+    }
+    if (!prompt.trim()) {
+      setGenerateStatus('请先输入视频提示词。');
+      return;
+    }
+    sessionStorage.setItem('deepseek_api_key', apiKey);
+    setGenerating(true);
+    setGenerated(null);
+    setGenerateStatus(renderNow ? '正在调用 DeepSeek 生成分镜和视频代码，随后会直接渲染 MP4...' : '正在调用 DeepSeek 生成分镜和视频代码...');
+    try {
+      const res = await fetch('/api/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apiKey,
+          model,
+          duration,
+          prompt,
+          render: renderNow
+        })
+      });
+      const data = (await res.json()) as GeneratedVideoResponse;
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      setGenerated(data);
+      setGenerateStatus(renderNow ? `生成并渲染完成：${data.output_path}` : '生成完成。打开 Remotion Studio，选择 DeepSeekGenerated 预览。');
+      message.success('DeepSeek 视频生成完成');
+    } catch (err) {
+      setGenerateStatus(`生成失败：${(err as Error).message}`);
+      message.error('生成失败');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <ConfigProvider
       theme={{
@@ -95,6 +157,81 @@ function App() {
                 </Button>
               </Space>
             </Flex>
+          </Card>
+
+          <Card
+            className="aiPanel"
+            title="DeepSeek 一键生成视频"
+            extra={<Tag color={generating ? 'processing' : generated ? 'green' : 'blue'}>{generating ? '生成中' : generated ? '已生成' : 'AI 视频'}</Tag>}
+          >
+            <div className="aiGrid">
+              <Space direction="vertical" size={12} className="full">
+                <Input.Password
+                  value={apiKey}
+                  onChange={(event) => setApiKey(event.target.value)}
+                  placeholder="DeepSeek API Key，或在启动 ai:api 前设置 DEEPSEEK_API_KEY"
+                />
+                <Flex gap={12} wrap="wrap">
+                  <Input className="modelInput" value={model} onChange={(event) => setModel(event.target.value)} addonBefore="模型" />
+                  <InputNumber className="durationInput" min={20} max={180} value={duration} onChange={(value) => setDuration(Number(value || 45))} addonBefore="秒数" />
+                  <Space className="renderSwitch">
+                    <Switch checked={renderNow} onChange={setRenderNow} />
+                    <Text>生成后直接渲染 MP4</Text>
+                  </Space>
+                </Flex>
+                <TextArea
+                  className="promptBox"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder="写清楚主题、受众、口播风格、视频时长、必须出现的画面文字。"
+                />
+                <Flex gap={10} wrap="wrap">
+                  <Button type="primary" size="large" icon={<PlayCircleOutlined />} loading={generating} onClick={generateVideo}>
+                    一键生成视频
+                  </Button>
+                  <Button href="http://127.0.0.1:3000" target="_blank" icon={<VideoCameraOutlined />}>
+                    打开 DeepSeekGenerated
+                  </Button>
+                  <Button onClick={() => copyCommand('npm run ai:api && npm run web:dev && npm run video:preview')} icon={<CopyOutlined />}>
+                    复制启动命令
+                  </Button>
+                </Flex>
+                <Alert type={generateStatus.startsWith('生成失败') ? 'error' : generated ? 'success' : 'info'} showIcon message={generateStatus} />
+              </Space>
+
+              <Card size="small" title="生成结果" className="resultCard">
+                {generated ? (
+                  <Space direction="vertical" size={10} className="full">
+                    <Descriptions bordered size="small" column={1}>
+                      <Descriptions.Item label="标题">{generated.spec.title}</Descriptions.Item>
+                      <Descriptions.Item label="副标题">{generated.spec.subtitle}</Descriptions.Item>
+                      <Descriptions.Item label="分镜数">{generated.spec.scenes.length}</Descriptions.Item>
+                      <Descriptions.Item label="输出">{generated.output_path || '未渲染，仅生成 Remotion 规格'}</Descriptions.Item>
+                    </Descriptions>
+                    <List
+                      size="small"
+                      dataSource={generated.spec.scenes}
+                      renderItem={(scene, index) => (
+                        <List.Item>
+                          <List.Item.Meta
+                            title={`${index + 1}. ${scene.title} · ${scene.duration}s`}
+                            description={scene.narration || scene.subtitle}
+                          />
+                        </List.Item>
+                      )}
+                    />
+                    <Text code className="codePreview">{generated.code.slice(0, 1800)}</Text>
+                  </Space>
+                ) : (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="先启动本地 API：npm run ai:api"
+                    description="前端只负责输入和展示；DeepSeek 调用、文件写入、Remotion 渲染都在本机 8795 服务执行。"
+                  />
+                )}
+              </Card>
+            </div>
           </Card>
 
           <div className="grid">
