@@ -1,0 +1,27 @@
+{
+  "name": "bilibili-study-notes-remotion",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "video:script": "tsx scripts/extract-voiceover-script.ts",
+    "voice:import": "tsx scripts/import-reference-voice.ts",
+    "video:tts": "tsx scripts/generate-voiceover.ts",
+    "video:captions:raw": "tsx scripts/transcribe-voiceover.ts",
+    "video:captions:fix": "tsx scripts/correct-voiceover-captions.ts",
+    "video:captions": "npm run video:captions:raw && npm run video:captions:fix",
+    "video:preview": "remotion studio remotion/index.ts --public-dir=public",
+    "video:render": "remotion render remotion/index.ts XiaohongshuTutorial out/xiaohongshu-tutorial.mp4 --codec=h264 --public-dir=public"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.474",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "remotion": "4.0.474"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

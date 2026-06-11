@@ -1,0 +1,11 @@
+node_modules/
+out/
+.env
+*.log
+*.tmp
+*.mp4
+public/audio/**/*.wav
+public/audio/**/*.mp3
+public/audio/voice-samples/custom/
+*.pyc
+__pycache__/
