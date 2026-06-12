@@ -61,6 +61,17 @@ public/generated/deepseek-video.json
 public/generated/deepseek-video-code.tsx.txt
 ```
 
+支持在控制台选择不同视频风格：
+
+- 小红书教程
+- 科技产品
+- 暗色赛博
+- 极简白板
+- 课程黑板
+- 商业发布会
+
+风格会同时影响 DeepSeek 生成提示词和 Remotion 渲染主题，不只是改颜色。
+
 如果勾选“生成后直接渲染 MP4”，会输出：
 
 ```text

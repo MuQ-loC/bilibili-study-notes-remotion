@@ -85,6 +85,45 @@ body {
   width: 160px;
 }
 
+.styleSelect {
+  width: 170px;
+}
+
+.styleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.styleCard {
+  min-height: 74px;
+  padding: 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.styleCard span {
+  display: block;
+  color: #0f172a;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.styleCard small {
+  display: block;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.activeStyle {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
 .renderSwitch {
   min-height: 32px;
 }
@@ -154,6 +193,10 @@ body {
 
   .grid,
   .aiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .styleGrid {
     grid-template-columns: 1fr;
   }
 }

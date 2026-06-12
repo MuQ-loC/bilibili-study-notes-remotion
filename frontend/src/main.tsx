@@ -1,5 +1,5 @@
 import { CopyOutlined, CustomerServiceOutlined, FileTextOutlined, PlayCircleOutlined, VideoCameraOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, ConfigProvider, Descriptions, Flex, Input, InputNumber, Layout, List, Space, Steps, Switch, Tag, Timeline, Typography, message } from 'antd';
+import { Alert, Button, Card, ConfigProvider, Descriptions, Flex, Input, InputNumber, Layout, List, Select, Space, Steps, Switch, Tag, Timeline, Typography, message } from 'antd';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import 'antd/dist/reset.css';
@@ -49,6 +49,15 @@ const assets = [
   ['成片', 'out/xiaohongshu-tutorial.mp4', '渲染后生成']
 ];
 
+const videoStyles = [
+  { value: 'xiaohongshu', label: '小红书教程', desc: '明亮、标签多、节奏快，适合知识分享。' },
+  { value: 'tech', label: '科技产品', desc: '专业、蓝绿科技感，适合开源工具和 SaaS 演示。' },
+  { value: 'cyber', label: '暗色赛博', desc: '深色、高对比霓虹，适合 AI 自动化和技术感内容。' },
+  { value: 'minimal', label: '极简白板', desc: '留白多、文字清楚，适合解释概念。' },
+  { value: 'chalkboard', label: '课程黑板', desc: '教学感、步骤感，适合教程拆解。' },
+  { value: 'launch', label: '商业发布会', desc: '大标题、大数字、强结论，适合产品卖点。' }
+];
+
 function copyCommand(command: string) {
   navigator.clipboard.writeText(command).then(() => message.success('命令已复制'));
 }
@@ -58,6 +67,7 @@ type GeneratedVideoResponse = {
   spec: {
     title: string;
     subtitle: string;
+    style?: string;
     scenes: Array<{ title: string; subtitle: string; narration: string; duration: number }>;
   };
   code: string;
@@ -69,6 +79,7 @@ type GeneratedVideoResponse = {
 function App() {
   const [apiKey, setApiKey] = useState(sessionStorage.getItem('deepseek_api_key') || '');
   const [model, setModel] = useState('deepseek-chat');
+  const [videoStyle, setVideoStyle] = useState('tech');
   const [duration, setDuration] = useState(45);
   const [renderNow, setRenderNow] = useState(false);
   const [prompt, setPrompt] = useState('做一个 45 秒横版视频，介绍我做的 B站视频总结工具。开头必须说“我做了一个开源小工具”，重点讲它能解析 B站链接、获取字幕、用 AI 校正错词、生成学习笔记、批量同步飞书。风格要像小红书教程，画面文字大，节奏快。');
@@ -96,6 +107,7 @@ function App() {
         body: JSON.stringify({
           api_key: apiKey,
           model,
+          style: videoStyle,
           duration,
           prompt,
           render: renderNow
@@ -173,12 +185,31 @@ function App() {
                 />
                 <Flex gap={12} wrap="wrap">
                   <Input className="modelInput" value={model} onChange={(event) => setModel(event.target.value)} addonBefore="模型" />
+                  <Select
+                    className="styleSelect"
+                    value={videoStyle}
+                    onChange={setVideoStyle}
+                    options={videoStyles.map((item) => ({ value: item.value, label: item.label }))}
+                  />
                   <InputNumber className="durationInput" min={20} max={180} value={duration} onChange={(value) => setDuration(Number(value || 45))} addonBefore="秒数" />
                   <Space className="renderSwitch">
                     <Switch checked={renderNow} onChange={setRenderNow} />
                     <Text>生成后直接渲染 MP4</Text>
                   </Space>
                 </Flex>
+                <div className="styleGrid">
+                  {videoStyles.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      className={item.value === videoStyle ? 'styleCard activeStyle' : 'styleCard'}
+                      onClick={() => setVideoStyle(item.value)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.desc}</small>
+                    </button>
+                  ))}
+                </div>
                 <TextArea
                   className="promptBox"
                   value={prompt}
@@ -205,6 +236,7 @@ function App() {
                     <Descriptions bordered size="small" column={1}>
                       <Descriptions.Item label="标题">{generated.spec.title}</Descriptions.Item>
                       <Descriptions.Item label="副标题">{generated.spec.subtitle}</Descriptions.Item>
+                      <Descriptions.Item label="风格">{videoStyles.find((item) => item.value === generated.spec.style)?.label || generated.spec.style || '-'}</Descriptions.Item>
                       <Descriptions.Item label="分镜数">{generated.spec.scenes.length}</Descriptions.Item>
                       <Descriptions.Item label="输出">{generated.output_path || '未渲染，仅生成 Remotion 规格'}</Descriptions.Item>
                     </Descriptions>

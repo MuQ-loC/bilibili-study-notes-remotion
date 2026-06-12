@@ -9,6 +9,7 @@ type GenerateRequest = {
   base_url?: string;
   model?: string;
   prompt?: string;
+  style?: string;
   duration?: number;
   render?: boolean;
 };
@@ -25,6 +26,7 @@ type SceneSpec = {
 type VideoSpec = {
   title: string;
   subtitle: string;
+  style?: string;
   scenes: SceneSpec[];
 };
 
@@ -40,6 +42,14 @@ const codePath = path.join(generatedDir, 'deepseek-video-code.tsx.txt');
 const outputPath = path.join(root, 'out', 'deepseek-generated.mp4');
 const port = Number(process.env.DEEPSEEK_VIDEO_API_PORT || 8795);
 const palette = ['#2563eb', '#0f766e', '#ea580c', '#8b5cf6', '#dc2626', '#0891b2'];
+const stylePrompts: Record<string, string> = {
+  xiaohongshu: '小红书教程风：明亮、强信息密度、醒目标签、口语化标题、适合知识分享。',
+  tech: '科技产品发布风：冷静、专业、蓝绿科技感、像 SaaS 产品演示和开源项目介绍。',
+  cyber: '暗色赛博风：深色背景、高对比霓虹色、适合 AI 工具、自动化、黑客感演示。',
+  minimal: '极简白板风：留白多、文字清楚、少装饰、像公开课白板讲解。',
+  chalkboard: '课程黑板风：深绿/深灰背景、粉笔感分区、适合教学步骤和知识点拆解。',
+  launch: '商业发布会风：大标题、大数字、强结论、适合产品卖点和融资路演式表达。'
+};
 
 const server = createServer(async (req, res) => {
   try {
@@ -64,6 +74,7 @@ const server = createServer(async (req, res) => {
         baseURL: body.base_url || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
         model: body.model || process.env.DEEPSEEK_MODEL || 'deepseek-chat',
         prompt: body.prompt,
+        style: body.style || 'tech',
         duration: body.duration || 45
       });
 
@@ -100,22 +111,27 @@ async function generateWithDeepSeek(options: {
   baseURL: string;
   model: string;
   prompt: string;
+  style: string;
   duration: number;
 }) {
   const sceneCount = Math.min(8, Math.max(4, Math.round(options.duration / 8)));
+  const styleKey = normalizeStyle(options.style);
   const system = [
     '你是资深 Remotion 视频导演和前端工程师。',
     '根据用户提示词生成 16:9 横版中文讲解视频。',
     '必须只返回 JSON 对象，不要 Markdown，不要代码块。',
-    'JSON 格式：{"spec": {"title": string, "subtitle": string, "scenes": Scene[]}, "component_code": string}',
+    'JSON 格式：{"spec": {"title": string, "subtitle": string, "style": string, "scenes": Scene[]}, "component_code": string}',
     'Scene 格式：{"title": string, "subtitle": string, "narration": string, "bullets": string[], "accent": "#2563eb", "duration": number}',
     `scenes 数量约 ${sceneCount} 个，总时长约 ${options.duration} 秒。`,
+    `视频风格必须使用：${styleKey}。风格说明：${stylePrompts[styleKey]}`,
     'title 要短，画面文字要大，narration 是字幕/口播句子，不要空泛。bullets 每场 3-4 条。',
+    '每个场景的 accent 要符合所选风格，不要全片只用同一个颜色。',
     'component_code 输出一个可读的 Remotion React 组件示例代码，使用输入 spec 渲染，不要访问网络，不要读写文件，不要引入第三方库。'
   ].join('\n');
 
   const user = [
     `视频提示词：${options.prompt}`,
+    `视频风格：${styleKey} - ${stylePrompts[styleKey]}`,
     `目标时长：${options.duration} 秒`,
     '请生成结构化分镜和示例 Remotion TSX 代码。'
   ].join('\n');
@@ -143,7 +159,7 @@ async function generateWithDeepSeek(options: {
   const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
   const content = data.choices?.[0]?.message?.content || '';
   const parsed = parseModelJSON(content);
-  const spec = sanitizeSpec(parsed.spec, options.duration);
+  const spec = sanitizeSpec(parsed.spec, options.duration, styleKey);
   const componentCode = String(parsed.component_code || '').trim() || defaultComponentCode();
   return { spec, componentCode };
 }
@@ -159,7 +175,7 @@ function parseModelJSON(content: string): DeepSeekPayload {
   }
 }
 
-function sanitizeSpec(input: VideoSpec | undefined, targetDuration: number): VideoSpec {
+function sanitizeSpec(input: VideoSpec | undefined, targetDuration: number, requestedStyle: string): VideoSpec {
   const scenes = Array.isArray(input?.scenes) ? input.scenes.slice(0, 10) : [];
   if (!scenes.length) throw new Error('DeepSeek 返回的 scenes 为空');
   const normalizedScenes = scenes.map((scene, index) => ({
@@ -173,8 +189,14 @@ function sanitizeSpec(input: VideoSpec | undefined, targetDuration: number): Vid
   return {
     title: clean(input?.title, 'DeepSeek 生成视频'),
     subtitle: clean(input?.subtitle, '由提示词自动生成的横版视频'),
+    style: normalizeStyle(input?.style || requestedStyle),
     scenes: normalizedScenes
   };
+}
+
+function normalizeStyle(value: unknown): string {
+  const key = String(value || '').trim();
+  return Object.prototype.hasOwnProperty.call(stylePrompts, key) ? key : 'tech';
 }
 
 function normalizeBullets(value: unknown): string[] {
